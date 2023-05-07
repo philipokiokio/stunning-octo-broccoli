@@ -1,0 +1,12 @@
+version: '3.9'
+services:
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: 'rabbitmq'
+    hostname: "0.0.0.0"
+    ports:
+        - 5672:5672    
+        - 4369:4369
+        - 15672:15672
+    tty: true
+    stdin_open: true  
