@@ -1,13 +1,13 @@
 from src.app.database import Base
 
-from sqlalchemy import Column, Integer, PickleType
+from sqlalchemy import Column, Integer, JSON
 from sqlalchemy.orm import Session
 
 
 class NoticationConnections(Base):
     __tablename__ = "websocket_connections"
     id = Column(Integer, primary_key=True, nullable=False)
-    wsock = Column(PickleType, nullable=False)
+    wsock = Column(JSON, nullable=False)
     user_id = Column(Integer, nullable=False, unique=True)
 
 

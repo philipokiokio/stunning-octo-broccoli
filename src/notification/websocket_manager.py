@@ -6,15 +6,12 @@ from src.notification.models import Repo
 from src.app.database import session_scope
 
 
+CONNECTIONS = []
+
+
 class ConnectionManager:
     def __init__(self):
-        self.active_connections: List[Dict[int, WebSocket]] = []
-        with session_scope() as db:
-            db
-            pass
-        self.table = Repo(db)
-        self.ws_connections = self.table.get_connections()
-        print(self.active_connections, self.ws_connections)
+        self.active_connections: List[Dict[int, WebSocket]] = CONNECTIONS
 
     def ws_serializer(self, ws: WebSocket) -> dict:
         ws = ws.__dict__
@@ -29,7 +26,6 @@ class ConnectionManager:
         await websocket.accept()
         self.active_connections.append({connection_id: websocket})
         ws__ = self.ws_serializer(websocket)
-
         ws = self.ws_objectifer(ws__)
         await ws.send_json({"testing": "coding magic"})
 
