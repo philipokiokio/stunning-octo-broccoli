@@ -3,6 +3,7 @@ import json
 import pika
 from src.notification.websocket_manager import manager
 from asgiref.sync import async_to_sync
+from src.notification.celery_worker import notification
 
 
 class MessageQueue:
@@ -11,13 +12,15 @@ class MessageQueue:
             pika.ConnectionParameters(host="localhost", port=5672, heartbeat=600)
         )
         self.channel = self.connection.channel()
-        self.failed_messages = {}
+        # self.failed_messages = {}
         self.wsok_manager = manager
         self.exchange = "demo_notification"
         self.queue = "test_case_queue"
-        self.channel.exchange_declare(exchange=self.exchange, exchange_type="fanout")
+        self.channel.exchange_declare(
+            exchange=self.exchange, exchange_type="fanout"  # , durable=True
+        )
 
-        self.channel.queue_declare(queue=self.queue)
+        self.channel.queue_declare(queue=self.queue)  # durable=True)
 
         self.channel.queue_bind(
             exchange=self.exchange, queue=self.queue, routing_key="notfy-x"
@@ -50,14 +53,21 @@ class MessageQueue:
                 # # send a WebSocket message to clients in the workspace and team
                 # message = f"User {user_id} {action} a project."
                 print(f"consuming body {body}")
-                message_status = await self.wsok_manager.send_personal_message(
-                    json.loads(body)
-                )
-                print(message_status)
-                if message_status:
-                    ch.basic_ack(delivery_tag=method.delivery_tag)
+
+                status_ws = notification.delay(json.loads(body))
+
+                print(status_ws)
+
+                if self.wsok_manager.active_connections:
+                    message_status = await self.wsok_manager.send_personal_message(
+                        json.loads(body)
+                    )
+                    print(message_status)
+                    if message_status:
+                        ch.basic_ack(delivery_tag=method.delivery_tag)
 
                 else:
+                    print("requeue")
                     # if (
                     #     method.redelivered
                     #     and method.delivery_tag in self.failed_messages
@@ -71,7 +81,9 @@ class MessageQueue:
                     #         )
                     #     else:
                     # Reject the message and discard it after max retries
+
                     ch.basic_nack(delivery_tag=method.delivery_tag, requeue=False)
+
                     # del self.failed_messages[method.delivery_tag]
                     # else:
                     #     # Reject the message and requeue it for the first time
@@ -95,7 +107,7 @@ class MessageQueue:
     def fetch_all_messages(self):
         messages = []
         method_frame, header_frame, body = self.channel.basic_get(queue=self.queue)
-
+        print(method_frame)
         while method_frame:
             method_frame, header_frame, body = self.channel.basic_get(queue=self.queue)
 
@@ -106,7 +118,7 @@ class MessageQueue:
 
     def get_user_messages(self, user_id: int):
         messages = self.fetch_all_messages()
-        print(messages)
+        print("all messages", messages)
         if messages:
             user_messages = [
                 {"message": message, "delivery_tag": method_frame.delivery_tag}
