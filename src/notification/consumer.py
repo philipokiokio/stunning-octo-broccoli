@@ -1,5 +1,4 @@
 from src.notification.messaging_bq import mq
-import asyncio
 
 
 def main():

@@ -10,7 +10,6 @@ engine = create_engine(
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
-print("creating Base")
 Base = declarative_base()
 
 
@@ -23,8 +22,6 @@ def session_scope():
     session = SessionLocal()
 
     try:
-        print("DB Ready!")
-
         yield session
     except:
         session.rollback()
