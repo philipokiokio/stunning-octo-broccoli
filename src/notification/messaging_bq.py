@@ -101,6 +101,7 @@ class MessageQueue:
 
     # CLOSING CONNECTIONS
     def __del__(self):
+        # try catch exceptions
         self.connection.close()
 
 

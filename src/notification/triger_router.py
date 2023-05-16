@@ -58,8 +58,6 @@ async def notification_socket(
             if user_meesage != None:
                 for message in user_meesage:
                     if message != None:
-                        # print(message)
-                        # print(message["message"]["user_id"])
                         message_status = await manager.personal_notification(message)
                         print(message_status)
                         # delete the message from the queue if successfully sent via WebSocket
@@ -68,12 +66,11 @@ async def notification_socket(
 
         hang = True
         while hang:
-            await asyncio.sleep(3)
-            await manager.ping(websocket)
-            # asyncio.wait_for(websocket.ping(), timeout=5)
-            # await websocket.send_text(f"Message text was: {data}")
-
-        # await manager.pong(websocket)
+            try:
+                await asyncio.sleep(1)
+                await manager.ping(websocket)
+            except asyncio.exceptions.CancelledError:
+                break
 
     except (WebSocketDisconnect, ConnectionClosedError, ConnectionClosedOK):
         manager.disconnect(user["id"])
